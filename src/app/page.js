@@ -1,101 +1,178 @@
-import Image from "next/image";
+"use client";
+import "./globals.css";
+import React, { useState, useEffect } from "react";
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} from "@google/generative-ai";
 
-export default function Home() {
+const Home = () => {
+  const [messages, setMessages] = useState([]);
+  const [userInput, setUserInput] = useState("");
+  const [chat, setChat] = useState(null);
+  const [theme, setTheme] = useState("light");
+  const [error, setError] = useState(null);
+
+  const API_KEY = "AIzaSyAUwWD9LQI11_a5sVta0WaDV8F9bwiac6I";
+  const MODEL_NAME = "gemini-1.0-pro-001";
+
+  useEffect(() => {
+    const initChat = async () => {
+
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const newChat = await genAI.getGenerativeModel({ model: MODEL_NAME }).startChat({
+        generationConfig: {
+          temperature: 0.9,
+          topK: 1,
+          topP: 1,
+          maxOutputTokens: 2048,
+        },
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+        ],
+        parts: messages.map((msg) => ({
+          text: msg.text,
+          role: msg.role,
+        })),
+      });
+
+      setChat(newChat);
+    };
+
+    initChat();
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    try {
+      const userMessage = { text: userInput, role: "user", timestamp: new Date() };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+      setUserInput("");
+
+      if (chat) {
+        const result = await chat.sendMessage(userInput);
+        const botMessage = { text: result.response.text(), role: "bot", timestamp: new Date() };
+
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
+      }
+    } catch (error) {
+      setError("Failed to send message");
+    }
+  };
+
+  const handleThemeChange = (e) => {
+    setTheme(e.target.value);
+  };
+
+  const getThemeColors = () => {
+    switch (theme) {
+      case "light":
+        return {
+          primary: "bg-white",
+          secondary: "bg-gray-100",
+          accent: "bg-blue-500",
+          text: "text-gray-800",
+        };
+      case "dark":
+        return {
+          primary: "bg-gray-900",
+          secondary: "bg-gray-800",
+          accent: "bg-yellow-500",
+          text: "text-gray-100",
+        };
+      default:
+        return {
+          primary: "bg-white",
+          secondary: "bg-gray-100",
+          accent: "bg-blue-500",
+          text: "text-gray-800",
+        };
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const { primary, secondary, accent, text } = getThemeColors();
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className={`flex flex-col h-screen p-6 bg-gradient-to-br ${theme === 'light' ? 'from-yellow-200 via-pink-200 to-blue-200' : 'from-gray-900 to-indigo-900'} transition-colors duration-500`}>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className={`text-3xl font-extrabold ${text} tracking-tight`}>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+            POLY AI
+          </span>
+        </h1>
+        <div className="flex items-center space-x-3">
+          <label className={`${text} font-medium`}>Theme:</label>
+          <select
+            id="theme"
+            value={theme}
+            onChange={handleThemeChange}
+            className={`p-2 rounded-md ${text} bg-opacity-20 backdrop-blur-sm border border-opacity-30 focus:ring-2 focus:ring-purple-400 transition duration-300 ease-in-out`}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </div>
+      <div className={`flex-1 overflow-y-auto ${secondary} rounded-lg p-4 shadow-lg bg-opacity-60 backdrop-blur-sm`}>
+        {messages.map((msg, index) => (
+          <div key={index} className={`mb-4 ${msg.role === "user" ? "text-right" : "text-left"} animate-fade-in-up`}>
+            <span className={`inline-block p-3 rounded-lg shadow-md ${msg.role === "user"
+              ? `${accent} text-white transform hover:scale-105 transition-transform duration-300`
+              : `${primary} ${text} bg-opacity-80`
+              }`}>
+              {msg.text}
+            </span>
+            <p className={`text-xs ${text} mt-1 opacity-70`}>
+              {msg.role === "bot" ? "Bot" : "You"} - {msg.timestamp.toLocaleTimeString()}
+            </p>
+          </div>
+        ))}
+      </div>
+      {error && (
+        <div className="text-red-500 text-sm mb-4 p-2 bg-red-100 border border-red-300 rounded-md">
+          {error}
+        </div>
+      )}
+      <div className="flex items-center mt-6">
+        <input
+          type="text"
+          placeholder="Type your message here..."
+          value={userInput}
+          onChange={(e) => setUserInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          className={`flex-1 p-3 rounded-l-lg border-t border-b border-l focus:outline-none focus:ring-2 focus:ring-purple-400 transition duration-300 ease-in-out ${primary} ${text}`}
+        />
+        <button
+          onClick={handleSendMessage}
+          className={`p-3 ${accent} text-white rounded-r-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-purple-400 transition duration-300 ease-in-out transform hover:scale-105`}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Send
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+export default Home;
