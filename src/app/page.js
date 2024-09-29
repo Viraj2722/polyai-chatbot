@@ -90,10 +90,10 @@ const Home = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen p-6 bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-800 dark:to-gray-900 transition-colors duration-500">
+    <div className="flex flex-col h-screen p-6 bg-gradient-to-r from-orange-300 to-blue-300 dark:from-gray-800 dark:to-gray-900 transition-colors duration-500">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-600">
             POLY AI
           </span>
         </h1>
